@@ -4,5 +4,6 @@ build/
 dist/
 gerbmerge-*.*/
 MANIFEST
+.mypy*
 
 /nbproject/private/

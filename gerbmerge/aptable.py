@@ -26,6 +26,7 @@ import util
 # GerbMerge doesn't handle these yet...only fixed macros (no parameters) are
 # currently supported.
 Apertures = (
+   ('Polygon', re.compile(r'^%AD(D\d+)P,([^X]+)X([^*]+)\*%$'), '%%AD%sP,%.5fX%.5fX%.5f*%%\n'),
    ('Rectangle', re.compile(r'^%AD(D\d+)R,([^X]+)X([^*]+)\*%$'), '%%AD%sR,%.5fX%.5f*%%\n'),
    ('Circle',    re.compile(r'^%AD(D\d+)C,([^*]+)\*%$'),         '%%AD%sC,%.5f*%%\n'),
    ('Oval',      re.compile(r'^%AD(D\d+)O,([^X]+)X([^*]+)\*%$'), '%%AD%sO,%.5fX%.5f*%%\n'),
@@ -214,7 +215,7 @@ def constructApertureTable(fileList):
 
   AT = {}               # Aperture Table for this file
   for fname in fileList:
-    #print 'Reading apertures from %s ...' % fname
+    print 'Reading apertures from %s ...' % fname
 
     knownMacroNames = {}
 
