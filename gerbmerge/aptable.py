@@ -26,7 +26,7 @@ import util
 # GerbMerge doesn't handle these yet...only fixed macros (no parameters) are
 # currently supported.
 Apertures = (
-   ('Polygon', re.compile(r'^%AD(D\d+)P,([^X]+)X([^*]+)\*%$'), '%%AD%sP,%.5fX%.5fX%.5f*%%\n'),
+   ('Polygon', re.compile(r'^%AD(D\d+)P,([^X]+)X(\d)X([^*]+)\*%$'), '%%AD%sP,%.5fX%dX%.5f*%%\n'),
    ('Rectangle', re.compile(r'^%AD(D\d+)R,([^X]+)X([^*]+)\*%$'), '%%AD%sR,%.5fX%.5f*%%\n'),
    ('Circle',    re.compile(r'^%AD(D\d+)C,([^*]+)\*%$'),         '%%AD%sC,%.5f*%%\n'),
    ('Oval',      re.compile(r'^%AD(D\d+)O,([^X]+)X([^*]+)\*%$'), '%%AD%sO,%.5fX%.5f*%%\n'),
@@ -44,15 +44,17 @@ for ap in Apertures:
   globals()[ap[0]] = ap
 
 class Aperture:
-  def __init__(self, aptype, code, dimx, dimy=None):
+  def __init__(self, aptype, code, dimx, dimy=None, sides=None):
     assert aptype in Apertures
     self.apname, self.pat, self.format = aptype
     self.code = code
     self.dimx = dimx      # Macro name for Macro apertures
     self.dimy = dimy      # None for Macro apertures
+    self.sides = sides
 
     if self.apname in ('Circle', 'Octagon', 'Macro'):
       assert (dimy is None)
+      assert (sides is None)
         
   def isRectangle(self):
     return self.apname == 'Rectangle'
@@ -148,7 +150,9 @@ class Aperture:
         return ('%s (%.5f)' % (self.apname, self.dimx))
 
   def writeDef(self, fid):
-    if self.dimy:
+    if self.sides:
+      fid.write(self.format % (self.code, self.dimx, self.sides, self.dimy))
+    elif self.dimy:
       fid.write(self.format % (self.code, self.dimx, self.dimy))
     else:
       fid.write(self.format % (self.code, self.dimx))
@@ -162,10 +166,16 @@ def parseAperture(s, knownMacroNames):
     match = ap[1].match(s)
     if match:
       dimy = None
-      if ap[0] in ('Circle', 'Octagon', 'Macro'):
+      sides = None
+      if ap[0] == 'Polygon':
+        code, dimx, sides, dimy = match.groups()
+      elif ap[0] in ('Circle', 'Octagon', 'Macro'):
         code, dimx = match.groups()
       else:
         code, dimx, dimy = match.groups()
+
+      if ap[0] in ('Polygon',):
+          sides = int(sides)
 
       if ap[0] in ('Macro',):
         if knownMacroNames.has_key(dimx):
@@ -180,7 +190,7 @@ def parseAperture(s, knownMacroNames):
         except:
           raise RuntimeError, "Illegal floating point aperture size"
 
-      return Aperture(ap, code, dimx, dimy)
+      return Aperture(ap, code, dimx, dimy, sides)
 
   return None
 
